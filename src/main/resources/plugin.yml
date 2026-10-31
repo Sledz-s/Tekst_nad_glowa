@@ -9,5 +9,12 @@ commands:
   opis:
     description: Wyświetla pływający tekst nad głową gracza
     usage: /opis <text>
+    permission: tekstnadglowo.opis
+    permission-default: true
+
+permissions:
+  tekstnadglowo.opis:
+    description: Pozwala na używanie komendy /opis
+    default: true
 
 authors: [ sl3DZ ]
