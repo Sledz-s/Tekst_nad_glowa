@@ -8,8 +8,6 @@ api-version: '1.20'
 commands:
   opis:
     description: Wyświetla pływający tekst nad głową gracza
-    usage: /opis [tekst]
-    permission: tekstNadGlowo.opis
-    permission-message: Nie masz uprawnień do użycia tej komendy!
+    usage: /opis <text>
 
 authors: [ sl3DZ ]

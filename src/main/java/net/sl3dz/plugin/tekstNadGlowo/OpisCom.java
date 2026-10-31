@@ -15,7 +15,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class OpisCom implements CommandExecutor, TabCompleter {
 
@@ -24,6 +27,10 @@ public class OpisCom implements CommandExecutor, TabCompleter {
     private final double player_z = 0;
 
     private final JavaPlugin plugin;
+
+    private final Map<UUID, PlayerDescription> activeDescriptions = new HashMap<>();
+
+    private record PlayerDescription(TextDisplay display, BukkitRunnable task) {}
 
     public OpisCom(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -36,10 +43,18 @@ public class OpisCom implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        UUID playerUUID = player.getUniqueId();
+
         if (args.length == 0) {
-            player.sendMessage("Użycie: /opis [tekst]");
+            if (removeActiveDescription(playerUUID)) {
+                player.sendMessage(ChatColor.YELLOW + "Twój opis został usunięty.");
+            } else {
+                player.sendMessage(ChatColor.RED + "Nie masz obecnie aktywnego opisu. Użyj: /opis <text>");
+            }
             return true;
         }
+
+        removeActiveDescription(playerUUID);
 
         String rawText = String.join(" ", args);
         String formattedText = ChatColor.translateAlternateColorCodes('&', rawText);
@@ -50,27 +65,41 @@ public class OpisCom implements CommandExecutor, TabCompleter {
         textDisplay.setText(formattedText);
         textDisplay.setBillboard(TextDisplay.Billboard.CENTER);
 
-        new BukkitRunnable() {
-            private int ticksElapsed = 0;
-            private final int maxTicks = (20 * 10);
 
+        BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!player.isOnline() || !textDisplay.isValid() || ticksElapsed >= maxTicks) {
+                if (!player.isOnline() || !textDisplay.isValid()) {
                     if (textDisplay.isValid()) {
                         textDisplay.remove();
                     }
+                    activeDescriptions.remove(playerUUID);
                     this.cancel();
                     return;
                 }
 
                 Location currentLoc = player.getLocation().add(player_x, player_y, player_z);
                 textDisplay.teleport(currentLoc);
-                ticksElapsed++;
             }
-        }.runTaskTimer(plugin, 0L, 1L);
+        };
 
+        activeDescriptions.put(playerUUID, new PlayerDescription(textDisplay, runnable));
+        runnable.runTaskTimer(plugin, 0L, 1L);
+
+        player.sendMessage(ChatColor.GREEN + "Ustawiono nowy opis!");
         return true;
+    }
+
+    private boolean removeActiveDescription(UUID playerUUID) {
+        PlayerDescription current = activeDescriptions.remove(playerUUID);
+        if (current != null) {
+            current.task().cancel();
+            if (current.display().isValid()) {
+                current.display().remove();
+            }
+            return true;
+        }
+        return false;
     }
 
     @Override
