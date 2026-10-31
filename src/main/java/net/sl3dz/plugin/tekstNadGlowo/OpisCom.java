@@ -28,9 +28,14 @@ public class OpisCom implements CommandExecutor, TabCompleter {
 
     private final JavaPlugin plugin;
 
+    // Poprawiony typ wartości w mapie na PlayerDescription
     private final Map<UUID, PlayerDescription> activeDescriptions = new HashMap<>();
 
-    private record PlayerDescription(TextDisplay display, BukkitRunnable task) {}
+    public Map<UUID, PlayerDescription> getActiveDescriptions() {
+        return activeDescriptions;
+    }
+
+    public record PlayerDescription(TextDisplay display, BukkitRunnable task) {}
 
     public OpisCom(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -65,16 +70,11 @@ public class OpisCom implements CommandExecutor, TabCompleter {
         textDisplay.setText(formattedText);
         textDisplay.setBillboard(TextDisplay.Billboard.CENTER);
 
-
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!player.isOnline() || !textDisplay.isValid()) {
-                    if (textDisplay.isValid()) {
-                        textDisplay.remove();
-                    }
-                    activeDescriptions.remove(playerUUID);
-                    this.cancel();
+                    removeActiveDescription(playerUUID);
                     return;
                 }
 
@@ -90,7 +90,7 @@ public class OpisCom implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean removeActiveDescription(UUID playerUUID) {
+    public boolean removeActiveDescription(UUID playerUUID) {
         PlayerDescription current = activeDescriptions.remove(playerUUID);
         if (current != null) {
             current.task().cancel();
@@ -100,6 +100,13 @@ public class OpisCom implements CommandExecutor, TabCompleter {
             return true;
         }
         return false;
+    }
+
+    // Metoda czyszcząca wszystkie opisy (przydatna w onDisable)
+    public void cleanupAll() {
+        for (UUID uuid : new HashMap<>(activeDescriptions).keySet()) {
+            removeActiveDescription(uuid);
+        }
     }
 
     @Override

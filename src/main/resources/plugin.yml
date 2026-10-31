@@ -1,6 +1,6 @@
 name: TekstNadGlowo
-description: $description
-version: '${version}'
+description: Wyświetla tekst nad głową gracza
+version: '1.0'
 
 main: net.sl3dz.plugin.tekstNadGlowo.TekstNadGlowo
 api-version: '1.20'
@@ -10,7 +10,6 @@ commands:
     description: Wyświetla pływający tekst nad głową gracza
     usage: /opis <text>
     permission: tekstnadglowo.opis
-    permission-default: true
 
 permissions:
   tekstnadglowo.opis:
